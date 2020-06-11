@@ -6,16 +6,16 @@ with open("README.md", mode="r", encoding="utf-8") as readme_file:
 
 
 setup(
-    name="sentence-transformers",
+    name="masked_sentence_transformers",
     version="0.2.6.1",
-    author="Nils Reimers, Gregor Geigle",
+    author="Nils Reimers, Gregor Geigle, Jan-Gabriel Mylius",
     author_email="Rnils@web.de",
     description="Sentence Embeddings using BERT / RoBERTa / XLNet",
     long_description=readme,
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
-    url="https://github.com/UKPLab/sentence-transformers",
-    download_url="https://github.com/UKPLab/sentence-transformers/archive/v0.2.6.zip",
+    url="https://github.com/mylius/masked-sentence-transformers",
+    download_url="https://github.com/UKPLab/sentence-transformers/archive/v0.2.7.zip",
     packages=find_packages(),
     install_requires=[
         'transformers>=2.8.0',

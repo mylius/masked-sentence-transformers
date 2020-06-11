@@ -90,7 +90,7 @@ class SentenceTransformer(nn.Sequential):
         self.device = torch.device(device)
         self.to(device)
 
-    def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None, output_value: str = 'sentence_embedding', convert_to_numpy: bool = True) -> List[ndarray]:
+    def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None, output_value: str = 'sentence_embedding', convert_to_numpy: bool = True, masked_index = None) -> List[ndarray]:
         """
         Computes sentence embeddings
 
@@ -132,7 +132,6 @@ class SentenceTransformer(nn.Sequential):
                 tokens = self.tokenize(sentence)
                 longest_seq = max(longest_seq, len(tokens))
                 batch_tokens.append(tokens)
-
             features = {}
             for text in batch_tokens:
                 sentence_features = self.get_sentence_features(text, longest_seq)
@@ -141,15 +140,18 @@ class SentenceTransformer(nn.Sequential):
                     if feature_name not in features:
                         features[feature_name] = []
                     features[feature_name].append(sentence_features[feature_name])
+                    
 
             for feature_name in features:
                 #features[feature_name] = torch.tensor(np.asarray(features[feature_name])).to(self.device)
                 features[feature_name] = torch.cat(features[feature_name]).to(self.device)
+            if masked_index != None:
+                features["attention_mask"][0][masked_index] *= 0
 
             with torch.no_grad():
                 out_features = self.forward(features)
                 embeddings = out_features[output_value]
-
+                
                 if output_value == 'token_embeddings':
                     #Set token embeddings to 0 for padding tokens
                     input_mask = out_features['attention_mask']
