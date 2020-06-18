@@ -90,7 +90,7 @@ class SentenceTransformer(nn.Sequential):
         self.device = torch.device(device)
         self.to(device)
 
-    def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None, output_value: str = 'sentence_embedding', convert_to_numpy: bool = True, masked_index = None) -> List[ndarray]:
+    def encode(self, sentences: List[str], batch_size: int = 8, show_progress_bar: bool = None, output_value: str = 'sentence_embedding', convert_to_numpy: bool = True, masked_index: int = None, output_attention: bool = False) -> List[ndarray]:
         """
         Computes sentence embeddings
 
@@ -150,6 +150,7 @@ class SentenceTransformer(nn.Sequential):
 
             with torch.no_grad():
                 out_features = self.forward(features)
+                attention = out_features["all_layer_embeddings"]
                 embeddings = out_features[output_value]
                 
                 if output_value == 'token_embeddings':
@@ -166,7 +167,10 @@ class SentenceTransformer(nn.Sequential):
         reverting_order = np.argsort(length_sorted_idx)
         all_embeddings = [all_embeddings[idx] for idx in reverting_order]
 
-        return all_embeddings
+        if output_attention:
+            return all_embeddings, attention
+        else:
+            return all_embeddings
 
     def get_max_seq_length(self):
         if hasattr(self._first_module(), 'max_seq_length'):
