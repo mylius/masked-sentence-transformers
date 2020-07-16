@@ -113,6 +113,7 @@ class SentenceTransformer(nn.Sequential):
             show_progress_bar = (logging.getLogger().getEffectiveLevel()==logging.INFO or logging.getLogger().getEffectiveLevel()==logging.DEBUG)
 
         all_embeddings = []
+        all_attentions = []
         length_sorted_idx = np.argsort([len(sen) for sen in sentences])
 
         iterator = range(0, len(sentences), batch_size)
@@ -163,12 +164,16 @@ class SentenceTransformer(nn.Sequential):
                     embeddings = embeddings.to('cpu').numpy()
 
                 all_embeddings.extend(embeddings)
+                all_attentions.extend(attention)
 
         reverting_order = np.argsort(length_sorted_idx)
         all_embeddings = [all_embeddings[idx] for idx in reverting_order]
+        all_attentions = [all_attentions[idx] for idx in reverting_order]
 
         if output_attention:
-            return all_embeddings, attention
+            print(len(all_attentions))
+            print(len(all_embeddings))
+            return all_embeddings, all_attentions
         else:
             return all_embeddings
 
