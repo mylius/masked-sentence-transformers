@@ -164,15 +164,26 @@ class SentenceTransformer(nn.Sequential):
                     embeddings = embeddings.to('cpu').numpy()
 
                 all_embeddings.extend(embeddings)
-                all_attentions.extend(attention)
+                for idx,layer in enumerate(attention):
+                    if len(all_attentions)<len(attention):
+                        all_attentions.append(attention[idx])
+                    else:
+                        print("extend")
+                        print(len(all_attentions))
+                        print(idx)
+                        all_attentions[idx] = torch.cat((all_attentions[idx],attention[idx]))
+                        print("done")
+                print(len(attention[0]))
+                print(len(all_attentions))
+                print(len(all_attentions[0]))
 
         reverting_order = np.argsort(length_sorted_idx)
+        print(len(all_attentions[0]))
         all_embeddings = [all_embeddings[idx] for idx in reverting_order]
         all_attentions = [all_attentions[idx] for idx in reverting_order]
 
         if output_attention:
             print(len(all_attentions))
-            print(len(all_embeddings))
             return all_embeddings, all_attentions
         else:
             return all_embeddings
