@@ -19,6 +19,7 @@ from . import __DOWNLOAD_SERVER__
 from .evaluation import SentenceEvaluator
 from .util import import_from_string, batch_to_device, http_get
 from . import __version__
+import torch.nn.functional as F
 
 class SentenceTransformer(nn.Sequential):
     def __init__(self, model_name_or_path: str = None, modules: Iterable[nn.Module] = None, device: str = None):
@@ -131,6 +132,7 @@ class SentenceTransformer(nn.Sequential):
             for idx in length_sorted_idx[batch_start: batch_end]:
                 sentence = sentences[idx]
                 tokens = self.tokenize(sentence)
+                print(len(tokens))
                 longest_seq = max(longest_seq, len(tokens))
                 batch_tokens.append(tokens)
             features = {}
@@ -165,25 +167,36 @@ class SentenceTransformer(nn.Sequential):
 
                 all_embeddings.extend(embeddings)
                 for idx,layer in enumerate(attention):
+                    
+                    #go trough all layers
+                    print(layer.shape)
+                    print(len(all_attentions),len(attention))
                     if len(all_attentions)<len(attention):
-                        all_attentions.append(attention[idx])
+                        #if there isn't an entry for this layer yet append it to all_attentions
+                        all_attentions.append(layer)
                     else:
-                        print("extend")
-                        print(len(all_attentions))
-                        print(idx)
+                        print("print specific before attentions: ", str(all_attentions[0][0][0][28][20]),str(all_attentions[0][0][0][28][21])) 
+                        #pad attentions
+                        if len(all_attentions) > 0:                         
+                            if len(all_attentions[idx][0][0]) < len(layer[0][0]):
+                                #if there are more max tokens in the layer than the corresponding layer in all_attentions pad all_attentions
+                                print("pad all_attentions")
+                                padding = len(layer[0][0]) - len(all_attentions[idx][0][0])   
+                                print("print specific before attentions: ", str(all_attentions[0][0][0][28][20]),str(all_attentions[0][0][0][28][21]))            
+                                all_attentions[idx] = F.pad(input=all_attentions[idx], pad=( 0, padding,0,padding), mode='constant', value=1)
+                                print("print specific after attentions: ",all_attentions[0][0][0][28][20],str(all_attentions[0][0][0][28][21]))           
+                            elif len(layer[0][0]) < len(all_attentions[idx][0][0]):
+                                #if there are more max tokens in the all_attentions layer than the corresponding layer pad layer.
+                                print("pad attentions")
+                                padding = len(all_attentions[idx][0][0]) - len(layer[0][0])
+                                layer = F.pad(input=layer, pad=( 0, padding,0,padding), mode='constant', value=1)               
                         all_attentions[idx] = torch.cat((all_attentions[idx],attention[idx]))
-                        print("done")
-                print(len(attention[0]))
-                print(len(all_attentions))
-                print(len(all_attentions[0]))
+                    
 
         reverting_order = np.argsort(length_sorted_idx)
-        print(len(all_attentions[0]))
         all_embeddings = [all_embeddings[idx] for idx in reverting_order]
-        all_attentions = [all_attentions[idx] for idx in reverting_order]
 
         if output_attention:
-            print(len(all_attentions))
             return all_embeddings, all_attentions
         else:
             return all_embeddings
