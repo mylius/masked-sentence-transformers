@@ -132,7 +132,6 @@ class SentenceTransformer(nn.Sequential):
             for idx in length_sorted_idx[batch_start: batch_end]:
                 sentence = sentences[idx]
                 tokens = self.tokenize(sentence)
-                print(len(tokens))
                 longest_seq = max(longest_seq, len(tokens))
                 batch_tokens.append(tokens)
             features = {}
@@ -166,6 +165,7 @@ class SentenceTransformer(nn.Sequential):
                     embeddings = embeddings.to('cpu').numpy()
 
                 all_embeddings.extend(embeddings)
+                attention = list(attention)
                 for idx,layer in enumerate(attention):
                     
                     #go trough all layers
@@ -174,18 +174,16 @@ class SentenceTransformer(nn.Sequential):
                         all_attentions.append(layer)
                     else:
                         #pad attentions
-                        if len(all_attentions) > 0:                         
+                        if len(all_attentions) > 0:                    
                             if len(all_attentions[idx][0][0]) < len(layer[0][0]):
                                 #if there are more max tokens in the layer than the corresponding layer in all_attentions pad all_attentions
-                                print("pad all_attentions")
                                 padding = len(layer[0][0]) - len(all_attentions[idx][0][0])             
-                                all_attentions[idx] = F.pad(input=all_attentions[idx], pad=( 0, padding,0,padding), mode='constant', value=1)          
+                                all_attentions[idx] = F.pad(input=all_attentions[idx], pad=( 0, padding,0,padding), mode='constant', value=0)          
                             elif len(layer[0][0]) < len(all_attentions[idx][0][0]):
                                 #if there are more max tokens in the all_attentions layer than the corresponding layer pad layer.
-                                print("pad attentions")
                                 padding = len(all_attentions[idx][0][0]) - len(layer[0][0])
-                                layer = F.pad(input=layer, pad=( 0, padding,0,padding), mode='constant', value=1)               
-                        all_attentions[idx] = torch.cat((all_attentions[idx],attention[idx]))
+                                attention[idx] = F.pad(input=attention[idx], pad=( 0, padding,0,padding), mode='constant', value=0)             
+                        all_attentions[idx] = torch.cat((all_attentions[idx],attention[idx]),dim=0)
                     
 
         reverting_order = np.argsort(length_sorted_idx)
